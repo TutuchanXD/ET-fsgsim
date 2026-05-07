@@ -3,28 +3,38 @@ import types
 from pathlib import Path
 import os
 
-FT_ROOT = os.environ.get("PHOTSIM6FT_ROOT", "/home/cxgao/ET/Photosim6ft")
+PHOTSIM_ROOT = os.environ.get(
+    "PHOTSIM7_ROOT",
+    os.environ.get("PHOTSIM6FT_ROOT", "/home/cxgao/ET/Photosim7"),
+)
 
 # 让 Python 能找到同事的源码目录（但不需要安装到环境）
-if FT_ROOT not in sys.path:
-    sys.path.insert(0, FT_ROOT)
+if PHOTSIM_ROOT not in sys.path:
+    sys.path.insert(0, PHOTSIM_ROOT)
 
 # 避免当前会话里已经加载过旧的 photsim6（很关键）
 for m in list(sys.modules):
     if m == "photsim6" or m.startswith("photsim6."):
         sys.modules.pop(m)
 
-# 重要：不要 `import photsim6ft`。
-# 因为 photsim6ft/__init__.py 会导入 dashboard/dash；如果你的环境没装 dash，会直接崩。
-# 我们在这里创建一个“轻量包别名” photsim6，把它的搜索路径指向 photsim6ft 源码目录：
-# 这样 `import photsim6.simulator` 等会正常从该目录加载，但不会执行 photsim6ft/__init__.py。
-PHOTSIM6_SRC_DIR = str(Path(FT_ROOT) / "photsim6ft")
+# 重要：不要 `import photsim7` 顶层包。
+# 因为 photsim7/__init__.py 会导入 dashboard/dash；如果你的环境没装 dash，会直接崩。
+# 我们在这里创建一个“轻量包别名” photsim6，把它的搜索路径指向当前 Photosim 源码目录：
+# 这样 `import photsim6.simulator` 等会正常加载，但不会执行 photsim7/__init__.py。
+_photsim_root_path = Path(PHOTSIM_ROOT)
+_candidate_src_dirs = [
+    _photsim_root_path / "photsim7",
+    _photsim_root_path / "photsim6ft",
+]
+PHOTSIM6_SRC_DIR = str(
+    next((path for path in _candidate_src_dirs if path.exists()), _candidate_src_dirs[0])
+)
 photsim6_alias_pkg = types.ModuleType("photsim6")
 photsim6_alias_pkg.__path__ = [PHOTSIM6_SRC_DIR]
 photsim6_alias_pkg.__package__ = "photsim6"
 sys.modules["photsim6"] = photsim6_alias_pkg
 
-# photsim6ft/simulator.py 会 import dashboard.py；而 dashboard.py 依赖 dash。
+# photsim simulator.py 会 import dashboard.py；而 dashboard.py 依赖 dash。
 # 本脚本始终使用 start_ray=False，不需要 dashboard 真正工作。
 # 若当前环境未安装 dash，则注入一个最小 stub，避免 import 时崩溃。
 try:

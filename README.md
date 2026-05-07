@@ -6,7 +6,7 @@ guide-detector image sequences for the FSG attitude-solving chain.
 
 The repository contains both guide-detector families used by ET:
 
-- transit-telescope guide simulations, rendered through the Photosim6ft
+- transit-telescope guide simulations, rendered through the Photosim7
   workflow;
 - microlensing-telescope guide simulations, rendered through the Photosim7
   workflow.
@@ -43,9 +43,10 @@ motion effect profiles.
   - Both simulation drivers use it as a runtime parameter template and create a
     sanitized per-run copy with hidden telescope FOV offsets disabled.
 
-The Photosim package sources are not vendored here. The transit scripts import
-Photosim6ft through `PHOTSIM6FT_ROOT`; the microlensing scripts import
-Photosim7 through `PHOTSIM7_ROOT`.
+The Photosim package sources are not vendored here. Both the transit and
+microlensing scripts now default to the local Photosim7 checkout through
+`PHOTSIM7_ROOT`. `PHOTSIM6FT_ROOT` is still accepted as a compatibility override
+for historical checkouts.
 
 ## Transit guide-detector setup
 
@@ -166,8 +167,8 @@ Useful environment overrides:
 
 | Variable | Purpose | Default |
 | --- | --- | --- |
-| `PHOTSIM6FT_ROOT` | Local Photosim6ft checkout root | `/home/cxgao/ET/Photosim6ft` |
 | `PHOTSIM7_ROOT` | Local Photosim7 checkout root | `/home/cxgao/ET/Photosim7` |
+| `PHOTSIM6FT_ROOT` | Historical Photosim6ft checkout override | unset |
 | `ET_DATA_DIR` | Photosim6 data root | `/home/cxgao/ET/Photosim6/data` |
 | `ET_FOCALPLANE_ROOT` | `et_focalplane` checkout root | `/home/cxgao/ET/et_focalplane` |
 | `ET_FOCALPLANE_DATA_DIR` | Microlensing registry data override | `<ET_FOCALPLANE_ROOT>/data_microlens` |
