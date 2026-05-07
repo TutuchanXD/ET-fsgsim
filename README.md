@@ -39,14 +39,13 @@ motion effect profiles.
   - Sets `ET_RUN_ALL_BATCHES=1`.
   - Sets `ET_OUTPUT_RUN_NAME_OVERRIDE=microlens_guide_photsim7_6s`.
 - `config/et_100_det_inputs_1h.xlsx`
-  - Runtime baseline spreadsheet copied from the Photosim6ft guide workflow.
+  - Runtime baseline spreadsheet copied from the legacy Photosim guide workflow.
   - Both simulation drivers use it as a runtime parameter template and create a
     sanitized per-run copy with hidden telescope FOV offsets disabled.
 
 The Photosim package sources are not vendored here. Both the transit and
 microlensing scripts now default to the local Photosim7 checkout through
-`PHOTSIM7_ROOT`. `PHOTSIM6FT_ROOT` is still accepted as a compatibility override
-for historical checkouts.
+`PHOTSIM7_ROOT`.
 
 ## Transit guide-detector setup
 
@@ -168,7 +167,6 @@ Useful environment overrides:
 | Variable | Purpose | Default |
 | --- | --- | --- |
 | `PHOTSIM7_ROOT` | Local Photosim7 checkout root | `/home/cxgao/ET/Photosim7` |
-| `PHOTSIM6FT_ROOT` | Historical Photosim6ft checkout override | unset |
 | `ET_DATA_DIR` | Photosim6 data root | `/home/cxgao/ET/Photosim6/data` |
 | `ET_FOCALPLANE_ROOT` | `et_focalplane` checkout root | `/home/cxgao/ET/et_focalplane` |
 | `ET_FOCALPLANE_DATA_DIR` | Microlensing registry data override | `<ET_FOCALPLANE_ROOT>/data_microlens` |
@@ -353,7 +351,7 @@ Enabled beyond `v1_noise_psf`:
 - `enable_pointing_drift` in the variant so the thermal motion component is
   applied.
 
-The thermal drift component uses the Photosim6ft
+The thermal drift component uses the Photosim
 `et_tess_thermal_drift_model` with the script's current field-angle
 approximation.
 
