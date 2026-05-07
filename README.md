@@ -1,6 +1,6 @@
-# fsgsim
+# ET-fsgsim
 
-`fsgsim` collects the ET fine-star-guidance simulation entry scripts that were
+`ET-fsgsim` collects the ET fine-star-guidance simulation entry scripts that were
 previously kept beside the Photosim working trees. The scripts generate
 guide-detector image sequences for the FSG attitude-solving chain.
 
