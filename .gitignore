@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Simulation products are intentionally generated outside git.
+outputs/
+cache/
+frames/
+*.npz
+*.npy
+*.fits
+*.png
+*.ecsv
+*.csv
+run_meta.json
+*.runtime_no_fov_offset.xlsx
