@@ -3,10 +3,7 @@ import types
 from pathlib import Path
 import os
 
-PHOTSIM_ROOT = os.environ.get(
-    "PHOTSIM7_ROOT",
-    os.environ.get("PHOTSIM6FT_ROOT", "/home/cxgao/ET/Photosim7"),
-)
+PHOTSIM_ROOT = os.environ.get("PHOTSIM7_ROOT", "/home/cxgao/ET/Photosim7")
 
 # 让 Python 能找到同事的源码目录（但不需要安装到环境）
 if PHOTSIM_ROOT not in sys.path:
@@ -22,13 +19,10 @@ for m in list(sys.modules):
 # 我们在这里创建一个“轻量包别名” photsim6，把它的搜索路径指向当前 Photosim 源码目录：
 # 这样 `import photsim6.simulator` 等会正常加载，但不会执行 photsim7/__init__.py。
 _photsim_root_path = Path(PHOTSIM_ROOT)
-_candidate_src_dirs = [
-    _photsim_root_path / "photsim7",
-    _photsim_root_path / "photsim6ft",
-]
-PHOTSIM6_SRC_DIR = str(
-    next((path for path in _candidate_src_dirs if path.exists()), _candidate_src_dirs[0])
-)
+_photsim7_src_dir = _photsim_root_path / "photsim7"
+if not _photsim7_src_dir.exists():
+    raise FileNotFoundError(f"Could not find Photosim7 package source: {_photsim7_src_dir}")
+PHOTSIM6_SRC_DIR = str(_photsim7_src_dir)
 photsim6_alias_pkg = types.ModuleType("photsim6")
 photsim6_alias_pkg.__path__ = [PHOTSIM6_SRC_DIR]
 photsim6_alias_pkg.__package__ = "photsim6"
@@ -155,7 +149,7 @@ def surface_brightness_mag_per_arcsec2_to_flux_per_pix(
     """Convert ET surface brightness to per-pixel electron rate.
 
     The conversion uses the same ET zero point already hard-coded in
-    `photsim6ft.field.Stars.build_catalog()` to keep stars and diffuse
+    `photsim6.field.Stars.build_catalog()` to keep stars and diffuse
     background on a consistent flux scale.
     """
 
@@ -194,7 +188,7 @@ GUIDE_PSF_FIELD_ID = 7
 
 
 # ============================================================================
-# 用户可改的“导星探测器仿真”关键设置（本脚本层实现，不改 photsim6ft 包）
+# 用户可改的“导星探测器仿真”关键设置（本脚本层实现，不改 Photosim7 包）
 # ============================================================================
 # 1) 单个导星探测器视场。
 FOV_DEG = GUIDE_FOV_DEG
@@ -313,7 +307,7 @@ FIELD_POLAR_ANGLE_DEG = GUIDE_PSF_FIELD_ANGLE_DEG
 FIELD_POLAR_ANGLE_RAD = float(np.deg2rad(FIELD_POLAR_ANGLE_DEG))
 
 # 3.2) 星数上限（重要的性能开关）
-# photsim6ft 的 `generate_background_starlight_frames` 会对每颗星逐个生成 PSF 并累加，
+# Photosim7 的 `generate_background_starlight_frames` 会对每颗星逐个生成 PSF 并累加，
 # 星数一旦上千，每帧耗时会非常夸张，GPU 上还可能触发 watchdog timeout。
 # 为避免大视场下逐星 PSF 叠加过慢，这里默认只保留最亮的若干颗星（包含 target 星）。
 MAX_SIM_STARS = 200
@@ -494,7 +488,7 @@ def select_guide_star_indices(
 
     candidate_idx = np.arange(mags.size, dtype=int)
 
-    # 目标星始终保留在第 0 行，避免破坏 photsim6ft 对 target/background 的约定。
+    # 目标星始终保留在第 0 行，避免破坏 Photosim 的 target/background 约定。
     keep = [0]
     for idx in candidate_idx[np.argsort(mags[candidate_idx])].tolist():
         if idx == 0:
@@ -1160,7 +1154,7 @@ _meta.update(
             "truth_abs_x_detector_pix",
             "truth_abs_y_detector_pix",
         ],
-        "frame_truth_source": "photsim6ft_frame_truth_builder",
+        "frame_truth_source": "photsim7_frame_truth_builder",
         "field_polar_angle_rad": float(FIELD_POLAR_ANGLE_RAD),
         "jitter_truth_mode": "shared_per_frame_mean",
     }
@@ -1357,7 +1351,7 @@ def _angles_to_xy_pix(
 ):
     """把姿态角(arcsec)转换为焦平面上的 x/y 像素位移。
 
-    这里复用 photsim6ft 的思路：
+    这里复用 Photosim7 中 photsim6 兼容 API 的思路：
     - 用一个代表全幅焦平面坐标系的位置 (x_pix, y_pix) 来施加旋转
     - displacement = old - new
 
