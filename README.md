@@ -1,18 +1,24 @@
 # fsgsim
 
 `fsgsim` collects the ET fine-star-guidance simulation entry scripts that were
-previously kept beside the `Photosim6ft` working tree. The scripts generate
+previously kept beside the Photosim working trees. The scripts generate
 guide-detector image sequences for the FSG attitude-solving chain.
 
-The current scripts target the transit-telescope guide detectors. They use the
-`et_focalplane` geometry and Gaia catalog query path to build the guide fields,
-then render Photosim6ft images with controlled detector, noise, PSF, and motion
-effect profiles.
+The repository contains both guide-detector families used by ET:
+
+- transit-telescope guide simulations, rendered through the Photosim6ft
+  workflow;
+- microlensing-telescope guide simulations, rendered through the Photosim7
+  workflow.
+
+Both families use `et_focalplane` geometry and Gaia catalog queries to build
+the guide fields, then render images with controlled detector, noise, PSF, and
+motion effect profiles.
 
 ## Repository contents
 
 - `scripts/et_sim_guide_det_v1_noise_psf.py`
-  - Main guide-detector simulation driver.
+  - Main transit guide-detector simulation driver.
   - Default profile: `v1_noise_psf`.
   - Can run all four guide-detector sky centers or one selected batch.
   - Defines all available effect profiles.
@@ -21,17 +27,29 @@ effect profiles.
   - Sets `ET_EFFECT_PROFILE=full`.
   - Sets `ET_RUN_ALL_BATCHES=1`.
   - Sets `ET_OUTPUT_RUN_NAME_OVERRIDE=guide_det_full_6s`.
+- `scripts/et_sim_microlens_guide_det_v1_noise_psf.py`
+  - Main microlensing guide-detector simulation driver.
+  - Default profile: `v1_noise_psf`.
+  - Loads detector centers, pixel scale, frame size, and detector order from
+    `et_focalplane/data_microlens`.
+  - Selects `ETCoordConfig.microlens_guide_only()`.
+- `scripts/et_sim_microlens_guide_det_full.py`
+  - Thin wrapper around `et_sim_microlens_guide_det_v1_noise_psf.py`.
+  - Sets `ET_EFFECT_PROFILE=full`.
+  - Sets `ET_RUN_ALL_BATCHES=1`.
+  - Sets `ET_OUTPUT_RUN_NAME_OVERRIDE=microlens_guide_photsim7_6s`.
 - `config/et_100_det_inputs_1h.xlsx`
   - Runtime baseline spreadsheet copied from the Photosim6ft guide workflow.
-  - The simulation script creates a sanitized per-run copy with hidden telescope
-    FOV offsets disabled.
+  - Both simulation drivers use it as a runtime parameter template and create a
+    sanitized per-run copy with hidden telescope FOV offsets disabled.
 
-The Photosim6ft package source itself is not vendored here. The scripts import
-it from a local checkout through `PHOTSIM6FT_ROOT`.
+The Photosim package sources are not vendored here. The transit scripts import
+Photosim6ft through `PHOTSIM6FT_ROOT`; the microlensing scripts import
+Photosim7 through `PHOTSIM7_ROOT`.
 
-## Default guide-detector setup
+## Transit guide-detector setup
 
-The driver overrides the main-detector spreadsheet with guide-detector
+The transit driver overrides the main-detector spreadsheet with guide-detector
 parameters in script space:
 
 | Quantity | Value |
@@ -76,9 +94,33 @@ The default star-query path is:
 
 The output root defaults to `/home/cxgao/ET/FSG_guide_sims`.
 
+## Microlensing guide-detector setup
+
+The microlensing driver uses the same guide-detector noise, exposure, sky
+background, PSF field, and output conventions as the transit baseline until
+detector-specific calibration data is available. The geometry is different and
+is resolved from `et_focalplane`:
+
+- registry data: `/home/cxgao/ET/et_focalplane/data_microlens`
+- config factory: `microlens_guide_only`
+- detector order:
+  - `guide_top`
+  - `guide_left`
+  - `guide_bottom`
+  - `guide_right`
+- detector centers: loaded from each detector's microlensing sky patch;
+- pixel scale: averaged from the microlensing detector field corners and pixel
+  dimensions;
+- frame width: derived from the microlensing guide-detector dimensions.
+
+The microlensing script writes `payload`, `detector_subset`,
+`et_coord_config_factory`, and `et_focalplane_geometry_source` into
+`run_meta.json` so downstream FSG configs can verify that the microlensing guide
+geometry was used.
+
 ## Running
 
-From this repository:
+Run the transit guide baseline:
 
 ```bash
 python scripts/et_sim_guide_det_v1_noise_psf.py
@@ -91,6 +133,18 @@ Run the full profile:
 
 ```bash
 python scripts/et_sim_guide_det_full.py
+```
+
+Run the microlensing guide baseline:
+
+```bash
+python scripts/et_sim_microlens_guide_det_v1_noise_psf.py
+```
+
+Run the microlensing full profile:
+
+```bash
+python scripts/et_sim_microlens_guide_det_full.py
 ```
 
 Run one selected batch:
@@ -113,8 +167,10 @@ Useful environment overrides:
 | Variable | Purpose | Default |
 | --- | --- | --- |
 | `PHOTSIM6FT_ROOT` | Local Photosim6ft checkout root | `/home/cxgao/ET/Photosim6ft` |
+| `PHOTSIM7_ROOT` | Local Photosim7 checkout root | `/home/cxgao/ET/Photosim7` |
 | `ET_DATA_DIR` | Photosim6 data root | `/home/cxgao/ET/Photosim6/data` |
 | `ET_FOCALPLANE_ROOT` | `et_focalplane` checkout root | `/home/cxgao/ET/et_focalplane` |
+| `ET_FOCALPLANE_DATA_DIR` | Microlensing registry data override | `<ET_FOCALPLANE_ROOT>/data_microlens` |
 | `GUIDE_GAIA_CATALOG_DIR` | Gaia catalog shard root | `/home/cxgao/gaia_dr3_19mag` |
 | `ET_CONFIG_XLSX` | Input spreadsheet path | `config/et_100_det_inputs_1h.xlsx` |
 | `ET_EFFECT_PROFILE` | Effect profile name | `v1_noise_psf` |
@@ -204,7 +260,7 @@ without adding attitude-motion or detector-response systematics.
 
 ### `full`
 
-This profile uses the Photosim6ft default variant flags plus all script-level
+This profile uses the active simulator's default variant flags plus all script-level
 dynamic components.
 
 Enabled:
@@ -340,7 +396,7 @@ split_hz = 1 / raw_frame_integration_s
 ```
 
 For the default guide exposure, the raw integration time is driven by the
-Photosim6ft timing model after the script overrides the spreadsheet parameters.
+active simulator timing model after the script overrides the spreadsheet parameters.
 Slow motion at or below `split_hz` is treated as detector-frame centroid drift.
 Fast motion above `split_hz` is folded into jitter-integrated PSFs for the
 profiles that enable them.
@@ -370,6 +426,8 @@ first-frame workflows:
 
 - transit guide real-centroid solve:
   `examples/run_guide_first_frame.py`
+- microlensing guide real-centroid solve:
+  `examples/run_microlens_guide_first_frame.py`
 - truth/noise comparison workflows:
   `examples/run_guide_first_frame_truth_noise.py`
   and `examples/run_guide_first_frame_truth_noise_exact.py`
