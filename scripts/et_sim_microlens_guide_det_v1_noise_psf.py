@@ -3,7 +3,7 @@ import types
 from pathlib import Path
 import os
 
-FT_ROOT = os.environ.get("PHOTSIM7_ROOT", "/home/cxgao/ET/Photosim7")
+FT_ROOT = os.environ.get("PHOTSIM7_ROOT", "/home/cxgao/ET/Photsim7")
 
 # 让 Python 能找到同事的源码目录（但不需要安装到环境）
 if FT_ROOT not in sys.path:
@@ -76,7 +76,7 @@ except Exception:
 import subprocess
 from openpyxl import load_workbook
 
-os.environ["ET_DATA_DIR"] = os.environ.get("ET_DATA_DIR", r"/home/cxgao/ET/Photosim6/data")
+os.environ["ET_DATA_DIR"] = os.environ.get("ET_DATA_DIR", r"/home/cxgao/ET/Photsim7-data")
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -393,7 +393,7 @@ REQUESTED_COMPUTE_DEVICE = "cuda"
 # 4) 产物输出根目录（你可指定到任意磁盘/目录）：
 #    你希望“所有产品”都落在一个确定位置。这里的 OUTPUT_ROOT 就是那个最上层目录。
 #    脚本会在其下创建更细的子目录结构（你说子目录怎么组织无所谓）。
-OUTPUT_ROOT = "/home/cxgao/ET/FSG_guide_sims"
+OUTPUT_ROOT = "/home/cxgao/Results/FSG_guide_sims"
 
 # 本次运行的名字（目录名的一部分），建议你按项目/日期/参数命名，便于检索。
 OUTPUT_RUN_NAME = "microlens_guide_photsim7_6s"
@@ -1389,7 +1389,7 @@ plt.legend()
 
 len(jit_spec_mask), jit_spec_mask.sum(), len(drift_spec_mask), drift_spec_mask.sum()
 
-tess_psd = load_pickle("/home/cxgao/ET/Photosim6/data/tess_data/tess_xyz_psd.pkl")
+tess_psd = load_pickle(opj(os.environ["ET_DATA_DIR"], "tess_data", "tess_xyz_psd.pkl"))
 
 """
 

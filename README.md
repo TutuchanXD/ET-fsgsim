@@ -92,7 +92,7 @@ The default star-query path is:
 - crop to the simulated detector frame: enabled
 - hidden static field offset: disabled by default
 
-The output root defaults to `/home/cxgao/ET/FSG_guide_sims`.
+The output root defaults to `/home/cxgao/Results/FSG_guide_sims`.
 
 ## Microlensing guide-detector setup
 
@@ -166,8 +166,8 @@ Useful environment overrides:
 
 | Variable | Purpose | Default |
 | --- | --- | --- |
-| `PHOTSIM7_ROOT` | Local Photosim7 checkout root | `/home/cxgao/ET/Photosim7` |
-| `ET_DATA_DIR` | Photosim6 data root | `/home/cxgao/ET/Photosim6/data` |
+| `PHOTSIM7_ROOT` | Local Photosim7 checkout root | `/home/cxgao/ET/Photsim7` |
+| `ET_DATA_DIR` | Photsim7 data root | `/home/cxgao/ET/Photsim7-data` |
 | `ET_FOCALPLANE_ROOT` | `et_focalplane` checkout root | `/home/cxgao/ET/et_focalplane` |
 | `ET_FOCALPLANE_DATA_DIR` | Microlensing registry data override | `<ET_FOCALPLANE_ROOT>/data_microlens` |
 | `GUIDE_GAIA_CATALOG_DIR` | Gaia catalog shard root | `/home/cxgao/gaia_dr3_19mag` |
@@ -175,7 +175,7 @@ Useful environment overrides:
 | `ET_EFFECT_PROFILE` | Effect profile name | `v1_noise_psf` |
 | `ET_RUN_ALL_BATCHES` | Run all four sky centers | `true` |
 | `ET_FIELD_CENTER_INDEX` | Single-batch index when not running all | `0` |
-| `ET_OUTPUT_ROOT_OVERRIDE` | Output root | `/home/cxgao/ET/FSG_guide_sims` |
+| `ET_OUTPUT_ROOT_OVERRIDE` | Output root | `/home/cxgao/Results/FSG_guide_sims` |
 | `ET_OUTPUT_RUN_NAME_OVERRIDE` | Output run name | `guide_det_v1_noise_psf_6s` |
 | `ET_MAX_SIM_STARS` | Bright-star cap per batch | `200` |
 | `ET_PROFILE_TARGET_FRAMES` | Optional frame-count cap | unset |
