@@ -74,7 +74,7 @@ parameters in script space:
 | PSF field angle | `14 deg` |
 | PSF field ID | `7` |
 | ADC digitization | enabled, 12 bit, clip to `[0, 4095]`, round values |
-| Cosmic rays | disabled unless `ET_ENABLE_COSMIC_RAYS=1` |
+| Cosmic rays | enabled by default; set `ET_ENABLE_COSMIC_RAYS=0` to disable |
 | Cosmic-ray rate | `5 events cm^-2 s^-1` when enabled |
 
 The guide star fields are defined by four hard-coded sky centers:
@@ -191,8 +191,8 @@ Useful environment overrides:
 | `ET_ADC_BIT_DEPTH` | ADC bit depth | `12` |
 | `ET_ADC_MIN_VALUE` | ADC lower bound | `0.0` |
 | `ET_ADC_ROUND_VALUES` | Round after clipping | `true` |
-| `ET_ENABLE_COSMIC_RAYS` | Enable Poisson cosmic-ray injection | `false` |
-| `ET_COSMIC_RAY_EVENT_LIBRARY_PATH` | Cosmic-ray NPZ event library | `/home/cxgao/ET/Photsim7-data/cosmic_ray/guide_6p5um/event_library_6p5um.npz` |
+| `ET_ENABLE_COSMIC_RAYS` | Enable Poisson cosmic-ray injection | `true` |
+| `ET_COSMIC_RAY_EVENT_LIBRARY_PATH` | Cosmic-ray NPZ event library; relative paths resolve from `ET_DATA_DIR` | `cosmic_ray/guide_6p5um/event_library_6p5um.npz` |
 | `ET_COSMIC_RAY_EVENT_LIBRARY_PIXEL_SIZE_UM` | Pixel size of selected event library | `6.5` |
 | `ET_COSMIC_RAY_EVENT_RATE_PER_CM2_S` | Event rate per detector area and exposure | `5.0` |
 | `ET_COSMIC_RAY_SEED` | Cosmic-ray RNG seed | `12345` |
