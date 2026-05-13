@@ -46,9 +46,11 @@ motion effect profiles.
 The Photosim package sources are not vendored here. Both the transit and
 microlensing scripts now default to the local Photosim7 checkout through
 `PHOTSIM7_ROOT`.
-The default runtime spreadsheet is
-`/home/cxgao/ET/Photsim7-data/config/et_100_det_inputs_1h.xlsx` so guide
-simulations use the same external parameter asset that Photsim7 documents.
+The default runtime spreadsheet is `$ET_DATA_DIR/config/et_100_det_inputs_1h.xlsx`
+when that file exists, with a fallback to this repository's
+`config/et_100_det_inputs_1h.xlsx`. On the ET workstation, `$ET_DATA_DIR`
+defaults to `/home/cxgao/ET/Photsim7-data`, so guide simulations use the same
+external parameter asset that Photsim7 documents.
 
 ## Transit guide-detector setup
 
@@ -177,7 +179,7 @@ Useful environment overrides:
 | `ET_FOCALPLANE_ROOT` | `et_focalplane` checkout root | `/home/cxgao/ET/et_focalplane` |
 | `ET_FOCALPLANE_DATA_DIR` | Microlensing registry data override | `<ET_FOCALPLANE_ROOT>/data_microlens` |
 | `GUIDE_GAIA_CATALOG_DIR` | Gaia catalog shard root | `/home/cxgao/gaia_dr3_19mag` |
-| `ET_CONFIG_XLSX` | Input spreadsheet path | `/home/cxgao/ET/Photsim7-data/config/et_100_det_inputs_1h.xlsx` |
+| `ET_CONFIG_XLSX` | Input spreadsheet path | `$ET_DATA_DIR/config/et_100_det_inputs_1h.xlsx` if present, else `config/et_100_det_inputs_1h.xlsx` |
 | `ET_EFFECT_PROFILE` | Effect profile name | `v1_noise_psf` |
 | `ET_RUN_ALL_BATCHES` | Run all four sky centers | `true` |
 | `ET_FIELD_CENTER_INDEX` | Single-batch index when not running all | `0` |

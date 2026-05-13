@@ -189,8 +189,14 @@ GUIDE_PSF_FIELD_ID = 7
 PHOTSIM7_DATA_DIR = Path(
     os.environ.get("ET_DATA_DIR", "/home/cxgao/ET/Photsim7-data")
 ).expanduser()
-DEFAULT_ET_CONFIG_XLSX = str(
+PHOTSIM7_DATA_CONFIG_XLSX = (
     PHOTSIM7_DATA_DIR / "config" / "et_100_det_inputs_1h.xlsx"
+)
+REPO_CONFIG_XLSX = Path(__file__).resolve().parent.parent / "config" / "et_100_det_inputs_1h.xlsx"
+DEFAULT_ET_CONFIG_XLSX = str(
+    PHOTSIM7_DATA_CONFIG_XLSX
+    if PHOTSIM7_DATA_CONFIG_XLSX.exists()
+    else REPO_CONFIG_XLSX
 )
 DEFAULT_COSMIC_RAY_EVENT_LIBRARY_PATH = str(
     PHOTSIM7_DATA_DIR
@@ -1069,7 +1075,8 @@ print(
 # 单帧尺寸修改：用导星探测器视场自动换算像素边长，并覆盖配置里的 Detector Width。
 # ============================================================================
 # photsim6 的 detector/PSF/image 目前主要使用一个 n_pixels（正方形）来定义单帧尺寸。
-# 因此我们只需要覆盖 "Detector Width" 即可让后续：
+# 同时覆盖 "Detector Width" 和 "Detector Height"，避免新配置解析路径回退到旧的方形默认。
+# 这样后续：
 # - mk_real_field_stars_2 查询范围（px_cnt）
 # - Detector 构造
 # - PSF warp

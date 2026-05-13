@@ -252,8 +252,14 @@ GUIDE_PSF_FIELD_ID = 7
 PHOTSIM7_DATA_DIR = Path(
     os.environ.get("ET_DATA_DIR", "/home/cxgao/ET/Photsim7-data")
 ).expanduser()
-DEFAULT_ET_CONFIG_XLSX = str(
+PHOTSIM7_DATA_CONFIG_XLSX = (
     PHOTSIM7_DATA_DIR / "config" / "et_100_det_inputs_1h.xlsx"
+)
+REPO_CONFIG_XLSX = Path(__file__).resolve().parent.parent / "config" / "et_100_det_inputs_1h.xlsx"
+DEFAULT_ET_CONFIG_XLSX = str(
+    PHOTSIM7_DATA_CONFIG_XLSX
+    if PHOTSIM7_DATA_CONFIG_XLSX.exists()
+    else REPO_CONFIG_XLSX
 )
 DEFAULT_COSMIC_RAY_EVENT_LIBRARY_PATH = str(
     PHOTSIM7_DATA_DIR
