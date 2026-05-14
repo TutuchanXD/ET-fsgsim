@@ -186,6 +186,30 @@ GUIDE_BACKGROUND_FLUX_E_PER_S_PER_PIX = (
 GUIDE_PSF_FIELD_ANGLE_DEG = 14.0
 GUIDE_PSF_FIELD_ID = 7
 
+PHOTSIM7_DATA_DIR = Path(
+    os.environ.get("ET_DATA_DIR", "/home/cxgao/ET/Photsim7-data")
+).expanduser()
+PHOTSIM7_DATA_CONFIG_XLSX = (
+    PHOTSIM7_DATA_DIR / "config" / "et_100_det_inputs_1h.xlsx"
+)
+REPO_CONFIG_XLSX = Path(__file__).resolve().parent.parent / "config" / "et_100_det_inputs_1h.xlsx"
+DEFAULT_ET_CONFIG_XLSX = str(
+    PHOTSIM7_DATA_CONFIG_XLSX
+    if PHOTSIM7_DATA_CONFIG_XLSX.exists()
+    else REPO_CONFIG_XLSX
+)
+DEFAULT_COSMIC_RAY_EVENT_LIBRARY_PATH = (
+    "cosmic_ray/guide_6p5um/event_library_6p5um.npz"
+)
+GUIDE_ENABLE_COSMIC_RAYS = True
+GUIDE_COSMIC_RAY_EVENT_LIBRARY_PIXEL_SIZE_UM = 6.5
+GUIDE_COSMIC_RAY_EVENT_RATE_PER_CM2_S = 5.0
+GUIDE_COSMIC_RAY_SEED = 12345
+GUIDE_ENABLE_ADC_DIGITIZATION = True
+GUIDE_ADC_BIT_DEPTH = 12
+GUIDE_ADC_MIN_VALUE = 0.0
+GUIDE_ADC_ROUND_VALUES = True
+
 
 # ============================================================================
 # 用户可改的“导星探测器仿真”关键设置（本脚本层实现，不改 Photosim7 包）
@@ -382,6 +406,13 @@ def env_int(name: str, default=None):
     if value is None or value == "":
         return default
     return int(value)
+
+
+def env_float(name: str, default: float) -> float:
+    value = os.environ.get(name)
+    if value is None or value == "":
+        return float(default)
+    return float(value)
 
 
 def env_str(name: str, default: str) -> str:
@@ -784,6 +815,27 @@ RUN_ALL_BATCHES = env_flag("ET_RUN_ALL_BATCHES", RUN_ALL_BATCHES)
 OUTPUT_ROOT = env_str("ET_OUTPUT_ROOT_OVERRIDE", OUTPUT_ROOT)
 OUTPUT_RUN_NAME = env_str("ET_OUTPUT_RUN_NAME_OVERRIDE", OUTPUT_RUN_NAME)
 MAX_SIM_STARS = env_int("ET_MAX_SIM_STARS", MAX_SIM_STARS)
+ENABLE_COSMIC_RAYS = env_flag("ET_ENABLE_COSMIC_RAYS", GUIDE_ENABLE_COSMIC_RAYS)
+COSMIC_RAY_EVENT_LIBRARY_PATH = env_str(
+    "ET_COSMIC_RAY_EVENT_LIBRARY_PATH",
+    DEFAULT_COSMIC_RAY_EVENT_LIBRARY_PATH,
+)
+COSMIC_RAY_EVENT_LIBRARY_PIXEL_SIZE_UM = env_float(
+    "ET_COSMIC_RAY_EVENT_LIBRARY_PIXEL_SIZE_UM",
+    GUIDE_COSMIC_RAY_EVENT_LIBRARY_PIXEL_SIZE_UM,
+)
+COSMIC_RAY_EVENT_RATE_PER_CM2_S = env_float(
+    "ET_COSMIC_RAY_EVENT_RATE_PER_CM2_S",
+    GUIDE_COSMIC_RAY_EVENT_RATE_PER_CM2_S,
+)
+COSMIC_RAY_SEED = env_int("ET_COSMIC_RAY_SEED", GUIDE_COSMIC_RAY_SEED)
+ENABLE_ADC_DIGITIZATION = env_flag(
+    "ET_ENABLE_ADC_DIGITIZATION",
+    GUIDE_ENABLE_ADC_DIGITIZATION,
+)
+ADC_BIT_DEPTH = env_int("ET_ADC_BIT_DEPTH", GUIDE_ADC_BIT_DEPTH)
+ADC_MIN_VALUE = env_float("ET_ADC_MIN_VALUE", GUIDE_ADC_MIN_VALUE)
+ADC_ROUND_VALUES = env_flag("ET_ADC_ROUND_VALUES", GUIDE_ADC_ROUND_VALUES)
 
 print(
     "[Effect profile] "
@@ -935,7 +987,7 @@ Working with this configuration:
 # config_xlsx_full_path = 'et_inputs_D2_PSF(241006)_Ji(0.24as)_Dr(0.03as_TESS_to_ET)_MD(limit_0.15as_Cyc_3d)_B(TESS_to_ET).xlsx'
 config_xlsx_full_path = os.environ.get(
     "ET_CONFIG_XLSX",
-    str(Path(__file__).resolve().parent.parent / "config" / "et_100_det_inputs_1h.xlsx"),
+    DEFAULT_ET_CONFIG_XLSX,
 )
 runtime_config_xlsx_full_path = build_runtime_config_xlsx(
     source_path=config_xlsx_full_path,
@@ -968,6 +1020,19 @@ config_manager.parameters["Dark Current"] = GUIDE_DARK_CURRENT_E_PER_S_PER_PIX *
     u.electron / u.s / u.pix
 )
 config_manager.parameters["Inter-PRV (RMS)"] = GUIDE_INTER_PRV_RMS_PERCENT * u.percent
+config_manager.parameters["Enable Cosmic Rays"] = bool(ENABLE_COSMIC_RAYS)
+config_manager.parameters["Cosmic Ray Event Library Path"] = COSMIC_RAY_EVENT_LIBRARY_PATH
+config_manager.parameters["Cosmic Ray Event Library Pixel Size"] = (
+    COSMIC_RAY_EVENT_LIBRARY_PIXEL_SIZE_UM * u.um
+)
+config_manager.parameters["Cosmic Ray Event Rate"] = (
+    COSMIC_RAY_EVENT_RATE_PER_CM2_S / (u.cm**2 * u.s)
+)
+config_manager.parameters["Cosmic Ray Seed"] = int(COSMIC_RAY_SEED)
+config_manager.parameters["Enable ADC Digitization"] = bool(ENABLE_ADC_DIGITIZATION)
+config_manager.parameters["ADC Bit Depth"] = int(ADC_BIT_DEPTH)
+config_manager.parameters["ADC Min Value"] = float(ADC_MIN_VALUE)
+config_manager.parameters["ADC Round Values"] = bool(ADC_ROUND_VALUES)
 
 FRAME_TIMING = resolve_detector_frame_timing(config_manager.parameters)
 RAW_FRAME_INTEGRATION_S = float(FRAME_TIMING["raw_frame_integration_s"])
@@ -1004,10 +1069,11 @@ print(
 )
 
 # ============================================================================
-# 单帧尺寸修改：用导星探测器视场自动换算像素边长，并覆盖配置里的 Detector Width。
+# 单帧尺寸修改：用导星探测器视场自动换算像素边长，并覆盖 Detector Width/Height。
 # ============================================================================
 # photsim6 的 detector/PSF/image 目前主要使用一个 n_pixels（正方形）来定义单帧尺寸。
-# 因此我们只需要覆盖 "Detector Width" 即可让后续：
+# 同时覆盖 "Detector Width" 和 "Detector Height"，避免新配置解析路径回退到旧的方形默认。
+# 这样后续：
 # - mk_real_field_stars_2 查询范围（px_cnt）
 # - Detector 构造
 # - PSF warp
@@ -1029,6 +1095,7 @@ print(
 )
 
 config_manager.parameters["Detector Width"] = n_pixels_fov * u.pix
+config_manager.parameters["Detector Height"] = n_pixels_fov * u.pix
 
 # 补充写入本批次 metadata（可用于你后续做“同一套 motion、不同天区中心”的对照检查）
 try:
@@ -1128,6 +1195,31 @@ _meta.update(
         ),
         "intra_prv_rms_percent": float(
             config_manager.parameters["Intra-PRV (RMS)"].to(u.percent).value
+        ),
+        "cosmic_rays_enabled": bool(config_manager.parameters["Enable Cosmic Rays"]),
+        "cosmic_ray_event_library_path": str(
+            config_manager.parameters["Cosmic Ray Event Library Path"]
+        ),
+        "cosmic_ray_event_library_pixel_size_um": float(
+            config_manager.parameters["Cosmic Ray Event Library Pixel Size"]
+            .to(u.um)
+            .value
+        ),
+        "cosmic_ray_event_rate_per_cm2_s": float(
+            config_manager.parameters["Cosmic Ray Event Rate"]
+            .to(1 / (u.cm**2 * u.s))
+            .value
+        ),
+        "cosmic_ray_seed": int(config_manager.parameters["Cosmic Ray Seed"]),
+        "adc_digitization_enabled": bool(
+            config_manager.parameters["Enable ADC Digitization"]
+        ),
+        "adc_bit_depth": int(config_manager.parameters["ADC Bit Depth"]),
+        "adc_min_value": float(config_manager.parameters["ADC Min Value"]),
+        "adc_round_values": bool(config_manager.parameters["ADC Round Values"]),
+        "adc_max_value": float(
+            config_manager.parameters["ADC Min Value"]
+            + (2 ** int(config_manager.parameters["ADC Bit Depth"]) - 1)
         ),
         "gaia_gmag_lim": float(GAIA_GMAG_LIM),
         "apply_static_field_offset": bool(APPLY_STATIC_FIELD_OFFSET),
@@ -2334,6 +2426,13 @@ if STREAM_SAVE_FRAMES:
                 dim=0,
             )
             truth_payload = image_generator.build_truth_payload(variant_ids)
+            extra_truth_payload = {}
+            cosmic_ray_payload = getattr(image_generator, "cosmic_ray_payload", None)
+            if cosmic_ray_payload is not None:
+                extra_truth_payload["cosmic_ray_mask"] = cosmic_ray_payload.mask.astype(
+                    np.bool_
+                )
+                extra_truth_payload["cosmic_ray_events"] = cosmic_ray_payload.events
 
             batch_time_s = (
                 np.arange(start, stop, dtype=np.float64) * cadence_s
@@ -2352,6 +2451,7 @@ if STREAM_SAVE_FRAMES:
                 cadence_s=np.float64(cadence_s),
                 unit="electron_or_adu",  # photsim6 的单位链可能随配置而变，这里先不强行假定。
                 **truth_payload,
+                **extra_truth_payload,
             )
 
             # 保存一个预览 PNG（第一批次的第一帧、variant=0）

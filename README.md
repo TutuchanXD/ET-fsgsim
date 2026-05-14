@@ -46,6 +46,11 @@ motion effect profiles.
 The Photosim package sources are not vendored here. Both the transit and
 microlensing scripts now default to the local Photosim7 checkout through
 `PHOTSIM7_ROOT`.
+The default runtime spreadsheet is `$ET_DATA_DIR/config/et_100_det_inputs_1h.xlsx`
+when that file exists, with a fallback to this repository's
+`config/et_100_det_inputs_1h.xlsx`. On the ET workstation, `$ET_DATA_DIR`
+defaults to `/home/cxgao/ET/Photsim7-data`, so guide simulations use the same
+external parameter asset that Photsim7 documents.
 
 ## Transit guide-detector setup
 
@@ -68,6 +73,9 @@ parameters in script space:
 | Inter-pixel PRV RMS | `3 percent` |
 | PSF field angle | `14 deg` |
 | PSF field ID | `7` |
+| ADC digitization | enabled, 12 bit, clip to `[0, 4095]`, round values |
+| Cosmic rays | enabled by default; set `ET_ENABLE_COSMIC_RAYS=0` to disable |
+| Cosmic-ray rate | `5 events cm^-2 s^-1` when enabled |
 
 The guide star fields are defined by four hard-coded sky centers:
 
@@ -171,7 +179,7 @@ Useful environment overrides:
 | `ET_FOCALPLANE_ROOT` | `et_focalplane` checkout root | `/home/cxgao/ET/et_focalplane` |
 | `ET_FOCALPLANE_DATA_DIR` | Microlensing registry data override | `<ET_FOCALPLANE_ROOT>/data_microlens` |
 | `GUIDE_GAIA_CATALOG_DIR` | Gaia catalog shard root | `/home/cxgao/gaia_dr3_19mag` |
-| `ET_CONFIG_XLSX` | Input spreadsheet path | `config/et_100_det_inputs_1h.xlsx` |
+| `ET_CONFIG_XLSX` | Input spreadsheet path | `$ET_DATA_DIR/config/et_100_det_inputs_1h.xlsx` if present, else `config/et_100_det_inputs_1h.xlsx` |
 | `ET_EFFECT_PROFILE` | Effect profile name | `v1_noise_psf` |
 | `ET_RUN_ALL_BATCHES` | Run all four sky centers | `true` |
 | `ET_FIELD_CENTER_INDEX` | Single-batch index when not running all | `0` |
@@ -179,6 +187,15 @@ Useful environment overrides:
 | `ET_OUTPUT_RUN_NAME_OVERRIDE` | Output run name | `guide_det_v1_noise_psf_6s` |
 | `ET_MAX_SIM_STARS` | Bright-star cap per batch | `200` |
 | `ET_PROFILE_TARGET_FRAMES` | Optional frame-count cap | unset |
+| `ET_ENABLE_ADC_DIGITIZATION` | Enable final ADC clip/round | `true` |
+| `ET_ADC_BIT_DEPTH` | ADC bit depth | `12` |
+| `ET_ADC_MIN_VALUE` | ADC lower bound | `0.0` |
+| `ET_ADC_ROUND_VALUES` | Round after clipping | `true` |
+| `ET_ENABLE_COSMIC_RAYS` | Enable Poisson cosmic-ray injection | `true` |
+| `ET_COSMIC_RAY_EVENT_LIBRARY_PATH` | Cosmic-ray NPZ event library; relative paths resolve from `ET_DATA_DIR` | `cosmic_ray/guide_6p5um/event_library_6p5um.npz` |
+| `ET_COSMIC_RAY_EVENT_LIBRARY_PIXEL_SIZE_UM` | Pixel size of selected event library | `6.5` |
+| `ET_COSMIC_RAY_EVENT_RATE_PER_CM2_S` | Event rate per detector area and exposure | `5.0` |
+| `ET_COSMIC_RAY_SEED` | Cosmic-ray RNG seed | `12345` |
 
 ## Common output products
 
@@ -208,6 +225,8 @@ Important products:
   - `time_s`;
   - `cadence_s`;
   - frame truth payload fields.
+  - when cosmic rays are enabled: `cosmic_ray_mask` and
+    `cosmic_ray_events`.
 - `preview_*.png`
   - first-frame log-scaled preview image.
 - `cache/jitter/`
