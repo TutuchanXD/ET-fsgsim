@@ -1249,6 +1249,9 @@ _meta.update(
             .to(u.electron / u.s / u.pix)
             .value
         ),
+        "subtract_nonstellar_mean": bool(
+            config_manager.parameters["Subtract Nonstellar Mean"]
+        ),
         "readout_noise_adu_per_pix": float(
             config_manager.parameters["Readout Noise"].to(u.adu / u.pix).value
         ),
